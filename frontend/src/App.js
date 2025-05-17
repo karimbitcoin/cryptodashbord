@@ -37,6 +37,21 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Function to format large numbers with commas and abbreviations
+const formatNumber = (number, decimals = 2) => {
+  if (number === undefined || number === null) return '0';
+  
+  if (number >= 1000000000) {
+    return `$${(number / 1000000000).toFixed(decimals)}B`;
+  } else if (number >= 1000000) {
+    return `$${(number / 1000000).toFixed(decimals)}M`;
+  } else if (number >= 1000) {
+    return `$${(number / 1000).toFixed(decimals)}K`;
+  } else {
+    return `$${number.toFixed(decimals)}`;
+  }
+};
+
 // Function to get crypto icon
 const getCryptoIcon = (symbol) => {
   const iconStyle = { fontSize: '1.4rem' };
