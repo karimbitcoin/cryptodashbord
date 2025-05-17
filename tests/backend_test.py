@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 # Use the public endpoint URL from frontend/.env
-BASE_URL = "https://891d87e6-328c-4d28-89ad-e4c1a6f8fbbc.preview.emergentagent.com"
+BASE_URL = "https://52a0d956-0792-4d12-8c9c-0faf22b545f7.preview.emergentagent.com"
 API_URL = f"{BASE_URL}/api"
 
 class CryptoDashboardAPITest(unittest.TestCase):
