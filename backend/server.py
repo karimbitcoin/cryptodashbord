@@ -129,11 +129,16 @@ class MarketIndicator(BaseModel):
     fear_greed_index: int
     last_updated: datetime = Field(default_factory=datetime.utcnow)
 
-class ChartData(BaseModel):
-    symbol: str
-    interval: str
-    candles: List[Dict[str, Any]]
-    last_updated: datetime = Field(default_factory=datetime.utcnow)
+class NewsArticle(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    summary: Optional[str] = None
+    content: Optional[str] = None
+    url: str
+    source: str
+    thumbnail: Optional[str] = None
+    category: Optional[str] = None
+    published_at: datetime = Field(default_factory=datetime.utcnow)
 
 # Mock data for cryptocurrencies
 def get_mock_crypto_data():
