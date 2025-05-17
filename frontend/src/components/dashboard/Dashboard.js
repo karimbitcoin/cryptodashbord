@@ -99,10 +99,34 @@ const Dashboard = () => {
     setSelectedCrypto(symbol);
   };
 
-  // Handle timeframe selection
-  const handleTimeframeChange = (timeframe) => {
-    setSelectedTimeframe(timeframe);
+  // Generate trend chart data for market cap and volume
+  const generateTrendChartData = () => {
+    const marketCapData = [];
+    const volumeData = [];
+    const btcDominanceData = [];
+    
+    const now = new Date();
+    
+    // Generate 30 days of data
+    for (let i = 30; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const time = Math.floor(date.getTime() / 1000);
+      
+      // Generate random but trending data
+      const marketCap = 1900000000000 + Math.random() * 500000000000 + (30 - i) * 15000000000;
+      const volume = 80000000000 + Math.random() * 40000000000;
+      const dominance = 40 + Math.random() * 5 + (i < 15 ? 2 : 0);
+      
+      marketCapData.push({ time, value: marketCap });
+      volumeData.push({ time, value: volume });
+      btcDominanceData.push({ time, value: dominance });
+    }
+    
+    return { marketCapData, volumeData, btcDominanceData };
   };
+  
+  const { marketCapData, volumeData, btcDominanceData } = generateTrendChartData();
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
