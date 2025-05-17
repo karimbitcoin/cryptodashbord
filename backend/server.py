@@ -8,13 +8,13 @@ import logging
 import os
 import asyncio
 import uuid
+import random
 from datetime import datetime
 from pathlib import Path
 import json
 from binance.client import Client
 import websockets
 import requests
-import redis
 import pandas as pd
 
 # Load environment variables
@@ -39,25 +39,17 @@ BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
 
 # Initialize Binance client
 binance_client = None
-using_mock_data = False
+using_mock_data = True
 
 try:
     binance_client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
-    binance_client.ping()  # Check if API is accessible
+    binance_client.get_system_status()  # A simpler API call to check connection
     logger.info("Binance API connected successfully")
+    using_mock_data = False
 except Exception as e:
     logger.warning(f"Failed to connect to Binance API: {e}")
     logger.warning("Using mock data instead")
     using_mock_data = True
-
-# Redis client for caching
-try:
-    redis_client = redis.Redis(host='localhost', port=6379, db=0)
-    redis_client.ping()  # Check if Redis is available
-    logger.info("Redis connected successfully")
-except redis.ConnectionError:
-    redis_client = None
-    logger.warning("Redis not available, caching will be disabled")
 
 # Create the main app
 app = FastAPI()
@@ -127,21 +119,178 @@ class ChartData(BaseModel):
     candles: List[Dict[str, Any]]
     last_updated: datetime = Field(default_factory=datetime.utcnow)
 
+# Mock data for cryptocurrencies
+def get_mock_crypto_data():
+    """Generate mock cryptocurrency data"""
+    mock_data = [
+        {
+            "symbol": "BTCUSDT",
+            "price": 53495.23 + random.uniform(-500, 500),
+            "price_change_24h": 1250.45 + random.uniform(-100, 100),
+            "price_change_percentage_24h": 2.36 + random.uniform(-0.5, 0.5),
+            "volume_24h": 24576000000 + random.uniform(-1000000000, 1000000000),
+            "market_cap": 1034000000000 + random.uniform(-10000000000, 10000000000),
+        },
+        {
+            "symbol": "ETHUSDT",
+            "price": 2853.12 + random.uniform(-30, 30),
+            "price_change_24h": 87.32 + random.uniform(-10, 10),
+            "price_change_percentage_24h": 3.15 + random.uniform(-0.5, 0.5),
+            "volume_24h": 14325000000 + random.uniform(-500000000, 500000000),
+            "market_cap": 345000000000 + random.uniform(-5000000000, 5000000000),
+        },
+        {
+            "symbol": "BNBUSDT",
+            "price": 567.89 + random.uniform(-5, 5),
+            "price_change_24h": 14.56 + random.uniform(-2, 2),
+            "price_change_percentage_24h": 2.63 + random.uniform(-0.5, 0.5),
+            "volume_24h": 2145000000 + random.uniform(-100000000, 100000000),
+            "market_cap": 78900000000 + random.uniform(-1000000000, 1000000000),
+        },
+        {
+            "symbol": "SOLUSDT",
+            "price": 124.34 + random.uniform(-3, 3),
+            "price_change_24h": 8.76 + random.uniform(-1, 1),
+            "price_change_percentage_24h": 7.58 + random.uniform(-0.5, 0.5),
+            "volume_24h": 4567000000 + random.uniform(-100000000, 100000000),
+            "market_cap": 56700000000 + random.uniform(-1000000000, 1000000000),
+        },
+        {
+            "symbol": "ADAUSDT",
+            "price": 0.58 + random.uniform(-0.01, 0.01),
+            "price_change_24h": 0.03 + random.uniform(-0.005, 0.005),
+            "price_change_percentage_24h": 5.45 + random.uniform(-0.5, 0.5),
+            "volume_24h": 1234000000 + random.uniform(-50000000, 50000000),
+            "market_cap": 23400000000 + random.uniform(-500000000, 500000000),
+        },
+        {
+            "symbol": "XRPUSDT",
+            "price": 0.52 + random.uniform(-0.01, 0.01),
+            "price_change_24h": -0.03 + random.uniform(-0.005, 0.005),
+            "price_change_percentage_24h": -5.45 + random.uniform(-0.5, 0.5),
+            "volume_24h": 2345000000 + random.uniform(-50000000, 50000000),
+            "market_cap": 27600000000 + random.uniform(-500000000, 500000000),
+        },
+        {
+            "symbol": "DOGEUSDT",
+            "price": 0.132 + random.uniform(-0.005, 0.005),
+            "price_change_24h": 0.007 + random.uniform(-0.001, 0.001),
+            "price_change_percentage_24h": 5.61 + random.uniform(-0.5, 0.5),
+            "volume_24h": 1987000000 + random.uniform(-50000000, 50000000),
+            "market_cap": 18700000000 + random.uniform(-300000000, 300000000),
+        },
+        {
+            "symbol": "DOTUSDT",
+            "price": 8.43 + random.uniform(-0.1, 0.1),
+            "price_change_24h": -0.25 + random.uniform(-0.05, 0.05),
+            "price_change_percentage_24h": -2.88 + random.uniform(-0.5, 0.5),
+            "volume_24h": 654000000 + random.uniform(-20000000, 20000000),
+            "market_cap": 10500000000 + random.uniform(-200000000, 200000000),
+        }
+    ]
+    
+    # Add last_updated field to each item
+    for item in mock_data:
+        item["last_updated"] = datetime.utcnow().isoformat()
+        
+    return mock_data
+
+# Mock data for market indicators
+def get_mock_market_indicators():
+    """Generate mock market indicators data"""
+    return {
+        "total_market_cap": 2345000000000 + random.uniform(-20000000000, 20000000000),
+        "total_volume_24h": 98700000000 + random.uniform(-2000000000, 2000000000),
+        "btc_dominance": 43.5 + random.uniform(-0.3, 0.3),
+        "eth_dominance": 18.2 + random.uniform(-0.2, 0.2),
+        "fear_greed_index": 65 + random.randint(-5, 5),
+        "last_updated": datetime.utcnow().isoformat()
+    }
+
+# Mock data for candlestick charts
+def get_mock_candlestick_data(symbol, interval):
+    """Generate mock candlestick data"""
+    # Base values that differ by symbol
+    base_values = {
+        "BTCUSDT": {"price": 53000, "volatility": 1500},
+        "ETHUSDT": {"price": 2800, "volatility": 100},
+        "BNBUSDT": {"price": 560, "volatility": 20},
+        "SOLUSDT": {"price": 120, "volatility": 10},
+        "ADAUSDT": {"price": 0.58, "volatility": 0.05},
+        "XRPUSDT": {"price": 0.52, "volatility": 0.04},
+        "DOGEUSDT": {"price": 0.13, "volatility": 0.01},
+        "DOTUSDT": {"price": 8.5, "volatility": 0.5},
+    }
+    
+    # Default values if symbol not found
+    base_price = base_values.get(symbol, {"price": 100, "volatility": 5})["price"]
+    volatility = base_values.get(symbol, {"price": 100, "volatility": 5})["volatility"]
+    
+    # Generate 100 candlesticks
+    candles = []
+    now = datetime.utcnow().timestamp()
+    
+    # Determine time interval in seconds
+    interval_seconds = 3600  # Default 1h
+    if interval == '1m':
+        interval_seconds = 60
+    elif interval == '5m':
+        interval_seconds = 300
+    elif interval == '15m':
+        interval_seconds = 900
+    elif interval == '4h':
+        interval_seconds = 14400
+    elif interval == '1d':
+        interval_seconds = 86400
+    elif interval == '1w':
+        interval_seconds = 604800
+    
+    price = base_price
+    for i in range(100):
+        time = now - (99 - i) * interval_seconds
+        
+        # Create some price movement
+        change = (volatility * 0.2) * (0.5 - random.random())
+        price += change
+        
+        open_price = price
+        close_price = price + (volatility * 0.1) * (0.5 - random.random())
+        high_price = max(open_price, close_price) + (volatility * 0.05) * random.random()
+        low_price = min(open_price, close_price) - (volatility * 0.05) * random.random()
+        volume = base_price * 1000 * (0.5 + random.random())
+        
+        candles.append({
+            "time": time,
+            "open": open_price,
+            "high": high_price,
+            "low": low_price,
+            "close": close_price,
+            "volume": volume
+        })
+    
+    return {
+        "symbol": symbol,
+        "interval": interval,
+        "candles": candles,
+        "last_updated": datetime.utcnow().isoformat()
+    }
+
 # Helper Functions
 async def get_crypto_prices(symbols: List[str] = None):
-    """Fetch current prices for cryptocurrencies from Binance API"""
+    """Fetch current prices for cryptocurrencies from Binance API or mock data"""
     if symbols is None:
         symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "ADAUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "DOTUSDT"]
     
+    if using_mock_data:
+        mock_data = get_mock_crypto_data()
+        # Filter the mock data based on the requested symbols
+        if symbols:
+            mock_data = [crypto for crypto in mock_data if crypto["symbol"] in symbols]
+        return mock_data
+        
+    # If we're not using mock data, fetch from Binance API
     result = []
     try:
-        # Check if data is in Redis cache
-        cache_key = f"crypto_prices:{'-'.join(symbols)}"
-        cached_data = redis_client.get(cache_key) if redis_client else None
-        
-        if cached_data:
-            return json.loads(cached_data)
-        
         # Get tickers from Binance
         tickers = binance_client.get_ticker()
         symbol_data = {ticker['symbol']: ticker for ticker in tickers}
@@ -168,25 +317,18 @@ async def get_crypto_prices(symbols: List[str] = None):
                     "last_updated": datetime.utcnow().isoformat()
                 })
                 
-        # Cache the result in Redis for 30 seconds
-        if redis_client:
-            redis_client.setex(cache_key, 30, json.dumps(result))
-            
         return result
     except Exception as e:
-        logger.error(f"Error fetching crypto prices: {e}")
-        return []
+        logger.error(f"Error fetching crypto prices from Binance: {e}")
+        # Fall back to mock data if there's an error with Binance API
+        return get_mock_crypto_data()
 
 async def get_market_indicators():
     """Fetch overall market indicators"""
+    if using_mock_data:
+        return get_mock_market_indicators()
+        
     try:
-        # Try to get from cache
-        cache_key = "market_indicators"
-        cached_data = redis_client.get(cache_key) if redis_client else None
-        
-        if cached_data:
-            return json.loads(cached_data)
-        
         # Get global market data (simplified)
         total_market_cap = 0
         total_volume = 0
@@ -229,33 +371,19 @@ async def get_market_indicators():
             "fear_greed_index": fear_greed_index,
             "last_updated": datetime.utcnow().isoformat()
         }
-        
-        # Cache the result in Redis for 60 seconds
-        if redis_client:
-            redis_client.setex(cache_key, 60, json.dumps(result))
             
         return result
     except Exception as e:
-        logger.error(f"Error fetching market indicators: {e}")
-        return {
-            "total_market_cap": 0,
-            "total_volume_24h": 0,
-            "btc_dominance": 0,
-            "eth_dominance": 0,
-            "fear_greed_index": 0,
-            "last_updated": datetime.utcnow().isoformat()
-        }
+        logger.error(f"Error fetching market indicators from Binance: {e}")
+        # Fall back to mock data if there's an error with Binance API
+        return get_mock_market_indicators()
 
 async def get_candlestick_data(symbol: str, interval: str):
     """Fetch candlestick data for a specific crypto and timeframe"""
+    if using_mock_data:
+        return get_mock_candlestick_data(symbol, interval)
+        
     try:
-        # Check if data is in Redis cache
-        cache_key = f"candles:{symbol}:{interval}"
-        cached_data = redis_client.get(cache_key) if redis_client else None
-        
-        if cached_data:
-            return json.loads(cached_data)
-        
         # Get candlestick data from Binance
         candles = binance_client.get_klines(symbol=symbol, interval=interval, limit=100)
         
@@ -276,26 +404,12 @@ async def get_candlestick_data(symbol: str, interval: str):
             "candles": formatted_candles,
             "last_updated": datetime.utcnow().isoformat()
         }
-        
-        # Cache the result in Redis
-        # Cache time depends on interval
-        cache_time = 60  # Default 60 seconds
-        if interval == '1m':
-            cache_time = 30
-        elif interval in ['5m', '15m']:
-            cache_time = 120
-        elif interval in ['1h', '4h']:
-            cache_time = 300
-        elif interval in ['1d', '1w']:
-            cache_time = 3600
-            
-        if redis_client:
-            redis_client.setex(cache_key, cache_time, json.dumps(result))
             
         return result
     except Exception as e:
-        logger.error(f"Error fetching candlestick data: {e}")
-        return {"symbol": symbol, "interval": interval, "candles": [], "last_updated": datetime.utcnow().isoformat()}
+        logger.error(f"Error fetching candlestick data from Binance: {e}")
+        # Fall back to mock data if there's an error with Binance API
+        return get_mock_candlestick_data(symbol, interval)
 
 # API Routes
 @api_router.get("/")
