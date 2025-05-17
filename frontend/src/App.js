@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
 import { createChart, CrosshairMode } from 'lightweight-charts';
@@ -7,6 +7,13 @@ import { io } from 'socket.io-client';
 import moment from 'moment';
 import { FaBitcoin, FaEthereum } from 'react-icons/fa';
 import { SiCardano, SiLitecoin, SiDogecoin, SiBinance, SiSolana } from 'react-icons/si';
+
+// Auth and Portfolio
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { PortfolioProvider } from './contexts/PortfolioContext';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import PortfolioView from './components/portfolio/PortfolioView';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
