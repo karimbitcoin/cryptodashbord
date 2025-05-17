@@ -250,6 +250,21 @@ const Dashboard = () => {
               <MarketIndicators indicators={marketIndicators} />
             </div>
 
+            {/* Market Trends and Fear & Greed Index */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <TrendChart 
+                data={marketCapData} 
+                title="Total Market Cap Trend" 
+                color="#26a69a"
+              />
+              <TrendChart 
+                data={volumeData} 
+                title="24h Volume Trend" 
+                color="#5d69cb"
+              />
+              <FearGreedIndex value={marketIndicators.fear_greed_index} />
+            </div>
+
             {/* Chart */}
             <div className="bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
