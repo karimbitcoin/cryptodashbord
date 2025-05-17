@@ -228,6 +228,81 @@ def get_mock_market_indicators():
         "last_updated": datetime.utcnow().isoformat()
     }
 
+# Mock data for news
+def get_mock_news(limit: int = 10, category: Optional[str] = None, search: Optional[str] = None):
+    """Generate mock news data with optional filtering"""
+    mock_news = [
+        {
+            "title": "Bitcoin Surges Past $50,000 as Institutional Interest Grows",
+            "summary": "Bitcoin's price reaches new heights as more institutions adopt cryptocurrency.",
+            "content": "The world's largest cryptocurrency has seen significant growth...",
+            "url": "https://example.com/news/1",
+            "source": "CryptoNews",
+            "thumbnail": "https://example.com/images/bitcoin.jpg",
+            "category": "market",
+            "published_at": (datetime.utcnow() - timedelta(hours=2)).isoformat()
+        },
+        {
+            "title": "Ethereum 2.0 Upgrade Shows Promise in Latest Tests",
+            "summary": "The long-awaited Ethereum upgrade demonstrates improved performance.",
+            "content": "Recent testing of the Ethereum 2.0 network has shown promising results...",
+            "url": "https://example.com/news/2",
+            "source": "BlockchainDaily",
+            "thumbnail": "https://example.com/images/ethereum.jpg",
+            "category": "technology",
+            "published_at": (datetime.utcnow() - timedelta(hours=4)).isoformat()
+        },
+        {
+            "title": "New Cryptocurrency Regulations Proposed in EU",
+            "summary": "European Union considers new framework for crypto assets.",
+            "content": "The European Commission has unveiled new regulatory proposals...",
+            "url": "https://example.com/news/3",
+            "source": "CryptoRegulation",
+            "thumbnail": "https://example.com/images/eu-flag.jpg",
+            "category": "regulation",
+            "published_at": (datetime.utcnow() - timedelta(hours=6)).isoformat()
+        },
+        {
+            "title": "DeFi Protocol Reports Record Trading Volume",
+            "summary": "Decentralized finance continues to grow with latest milestone.",
+            "content": "A leading DeFi protocol has reported unprecedented trading volumes...",
+            "url": "https://example.com/news/4",
+            "source": "DeFiNews",
+            "thumbnail": "https://example.com/images/defi.jpg",
+            "category": "defi",
+            "published_at": (datetime.utcnow() - timedelta(hours=8)).isoformat()
+        },
+        {
+            "title": "Major Bank Launches Cryptocurrency Custody Service",
+            "summary": "Traditional financial institution enters the crypto space.",
+            "content": "One of the world's largest banks has announced a new crypto custody solution...",
+            "url": "https://example.com/news/5",
+            "source": "BankingNews",
+            "thumbnail": "https://example.com/images/bank.jpg",
+            "category": "adoption",
+            "published_at": (datetime.utcnow() - timedelta(hours=10)).isoformat()
+        }
+    ]
+    
+    # Filter by category if specified
+    if category:
+        mock_news = [news for news in mock_news if news["category"] == category]
+    
+    # Filter by search term if specified
+    if search:
+        search = search.lower()
+        mock_news = [
+            news for news in mock_news 
+            if search in news["title"].lower() or 
+               search in news["summary"].lower() or 
+               search in news["content"].lower()
+        ]
+    
+    # Limit the number of results
+    mock_news = mock_news[:limit]
+    
+    return mock_news
+
 # Mock data for candlestick charts
 def get_mock_candlestick_data(symbol, interval):
     """Generate mock candlestick data"""
