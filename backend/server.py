@@ -490,7 +490,190 @@ async def websocket_market_indicators(websocket: WebSocket):
         logger.error(f"WebSocket error: {e}")
         manager.disconnect(websocket)
 
-# Include the router in the main app
+# Authentication routes
+@auth_router.post("/register", response_model=UserResponse)
+async def register(user_data: UserCreate):
+    """Register a new user"""
+    user = await create_user(user_data, db)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists"
+        )
+    return user
+
+@auth_router.post("/login", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Login a user"""
+    user = authenticate_user(form_data.username, form_data.password, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=60 * 24 * 7)  # 7 days
+    access_token = create_access_token(
+        data={"sub": user["id"]}, expires_delta=access_token_expires
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@auth_router.get("/me", response_model=UserResponse)
+async def get_current_user_info(current_user: dict = Depends(get_current_user)):
+    """Get the current user's information"""
+    return current_user
+
+# Portfolio routes
+@portfolio_router.post("", response_model=Portfolio)
+async def create_portfolio(portfolio_data: PortfolioCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new portfolio"""
+    new_portfolio = Portfolio(
+        id=str(uuid.uuid4()),
+        user_id=current_user["id"],
+        name=portfolio_data.name,
+        assets=portfolio_data.assets
+    )
+    
+    # In a real app, we would insert the portfolio into the database
+    # await db.portfolios.insert_one(new_portfolio.dict())
+    
+    return new_portfolio
+
+@portfolio_router.get("", response_model=List[PortfolioSummary])
+async def get_portfolios(current_user: dict = Depends(get_current_user)):
+    """Get all portfolios for the current user"""
+    # In a real app, we would fetch portfolios from the database
+    # portfolios = await db.portfolios.find({"user_id": current_user["id"]}).to_list(length=None)
+    
+    # For now, return a mock portfolio
+    mock_portfolio = PortfolioSummary(
+        id="mock-portfolio-id",
+        name="My Crypto Portfolio",
+        total_value=15783.45,
+        total_profit_loss=2341.23,
+        profit_loss_percentage=17.42,
+        assets_count=5,
+        updated_at=datetime.utcnow()
+    )
+    
+    return [mock_portfolio]
+
+@portfolio_router.get("/{portfolio_id}", response_model=Portfolio)
+async def get_portfolio(portfolio_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific portfolio"""
+    # In a real app, we would fetch the portfolio from the database
+    # portfolio = await db.portfolios.find_one({"_id": portfolio_id, "user_id": current_user["id"]})
+    # if not portfolio:
+    #     raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    # For now, return a mock portfolio
+    from models import PortfolioAsset
+    mock_assets = [
+        PortfolioAsset(
+            symbol="BTCUSDT",
+            amount=0.12,
+            purchase_price=48500.00,
+            purchase_date=datetime.utcnow() - timedelta(days=30)
+        ),
+        PortfolioAsset(
+            symbol="ETHUSDT",
+            amount=1.5,
+            purchase_price=2650.00,
+            purchase_date=datetime.utcnow() - timedelta(days=15)
+        ),
+        PortfolioAsset(
+            symbol="BNBUSDT",
+            amount=5.0,
+            purchase_price=552.00,
+            purchase_date=datetime.utcnow() - timedelta(days=7)
+        ),
+        PortfolioAsset(
+            symbol="SOLUSDT",
+            amount=20.0,
+            purchase_price=115.00,
+            purchase_date=datetime.utcnow() - timedelta(days=10)
+        ),
+        PortfolioAsset(
+            symbol="ADAUSDT",
+            amount=1000.0,
+            purchase_price=0.55,
+            purchase_date=datetime.utcnow() - timedelta(days=20)
+        )
+    ]
+    
+    mock_portfolio = Portfolio(
+        id=portfolio_id,
+        user_id=current_user["id"],
+        name="My Crypto Portfolio",
+        assets=mock_assets,
+        created_at=datetime.utcnow() - timedelta(days=45),
+        updated_at=datetime.utcnow()
+    )
+    
+    return mock_portfolio
+
+@portfolio_router.delete("/{portfolio_id}")
+async def delete_portfolio(portfolio_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a portfolio"""
+    # In a real app, we would delete the portfolio from the database
+    # result = await db.portfolios.delete_one({"_id": portfolio_id, "user_id": current_user["id"]})
+    # if result.deleted_count == 0:
+    #     raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    return {"message": "Portfolio deleted successfully"}
+
+# User preferences routes
+@preferences_router.get("", response_model=UserPreferences)
+async def get_preferences(current_user: dict = Depends(get_current_user)):
+    """Get user preferences"""
+    # In a real app, we would fetch preferences from the database
+    # preferences = await db.preferences.find_one({"user_id": current_user["id"]})
+    # if not preferences:
+    #     # Create default preferences
+    #     preferences = UserPreferences(user_id=current_user["id"])
+    #     await db.preferences.insert_one(preferences.dict())
+    
+    # For now, return mock preferences
+    mock_preferences = UserPreferences(
+        id="mock-preferences-id",
+        user_id=current_user["id"],
+        default_currency="USD",
+        dark_mode=True,
+        favorite_coins=["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+        dashboard_layout={
+            "portfolio": {"x": 0, "y": 0, "w": 1, "h": 1},
+            "chart": {"x": 1, "y": 0, "w": 2, "h": 2},
+            "market": {"x": 0, "y": 1, "w": 1, "h": 1}
+        }
+    )
+    
+    return mock_preferences
+
+@preferences_router.put("", response_model=UserPreferences)
+async def update_preferences(preferences_data: dict, current_user: dict = Depends(get_current_user)):
+    """Update user preferences"""
+    # In a real app, we would update preferences in the database
+    # await db.preferences.update_one(
+    #     {"user_id": current_user["id"]},
+    #     {"$set": {**preferences_data, "updated_at": datetime.utcnow()}}
+    # )
+    
+    # For now, return mock updated preferences
+    mock_preferences = UserPreferences(
+        id="mock-preferences-id",
+        user_id=current_user["id"],
+        **preferences_data,
+        updated_at=datetime.utcnow()
+    )
+    
+    return mock_preferences
+
+# Include all routers in the main app
+api_router.include_router(auth_router, prefix="/auth")
+api_router.include_router(portfolio_router, prefix="/portfolio")
+api_router.include_router(preferences_router, prefix="/preferences")
 app.include_router(api_router)
 
 @app.on_event("shutdown")
