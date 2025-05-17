@@ -70,54 +70,108 @@ const Dashboard = () => {
     fetchChartData(selectedCrypto, selectedTimeframe);
 
     // WebSocket setup for crypto prices
-    const pricesWsUrl = `${BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://')}/ws/crypto-prices`;
-    const pricesWs = new WebSocket(pricesWsUrl);
-    
-    pricesWs.onopen = () => {
-      console.log('Connected to crypto prices WebSocket');
-    };
-    
-    pricesWs.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'crypto_prices') {
-        setCryptocurrencies(data.data);
-        setIsLoading(false);
+    let pricesWs = null;
+    let indicatorsWs = null;
+    let reconnectTimeout = null;
+
+    const connectPricesWebSocket = () => {
+      const pricesWsUrl = `${BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://')}/ws/crypto-prices`;
+      
+      try {
+        pricesWs = new WebSocket(pricesWsUrl);
+        
+        pricesWs.onopen = () => {
+          console.log('Connected to crypto prices WebSocket');
+        };
+        
+        pricesWs.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'crypto_prices') {
+              setCryptocurrencies(data.data);
+              setIsLoading(false);
+            }
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+          }
+        };
+        
+        pricesWs.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          if (pricesWs) {
+            pricesWs.close();
+          }
+        };
+        
+        pricesWs.onclose = () => {
+          console.log('Crypto prices WebSocket closed. Reconnecting...');
+          // Try to reconnect after 5 seconds
+          reconnectTimeout = setTimeout(connectPricesWebSocket, 5000);
+        };
+      } catch (error) {
+        console.error('Error setting up crypto prices WebSocket:', error);
+        // Fallback to polling
+        const interval = setInterval(fetchCryptocurrencies, 5000);
+        return () => clearInterval(interval);
       }
-    };
-    
-    pricesWs.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      // Fallback to polling if WebSocket fails
-      const interval = setInterval(fetchCryptocurrencies, 5000);
-      return () => clearInterval(interval);
     };
 
-    // WebSocket setup for market indicators
-    const indicatorsWsUrl = `${BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://')}/ws/market-indicators`;
-    const indicatorsWs = new WebSocket(indicatorsWsUrl);
-    
-    indicatorsWs.onopen = () => {
-      console.log('Connected to market indicators WebSocket');
-    };
-    
-    indicatorsWs.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'market_indicators') {
-        setMarketIndicators(data.data);
+    const connectIndicatorsWebSocket = () => {
+      const indicatorsWsUrl = `${BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://')}/ws/market-indicators`;
+      
+      try {
+        indicatorsWs = new WebSocket(indicatorsWsUrl);
+        
+        indicatorsWs.onopen = () => {
+          console.log('Connected to market indicators WebSocket');
+        };
+        
+        indicatorsWs.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'market_indicators') {
+              setMarketIndicators(data.data);
+            }
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+          }
+        };
+        
+        indicatorsWs.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          if (indicatorsWs) {
+            indicatorsWs.close();
+          }
+        };
+        
+        indicatorsWs.onclose = () => {
+          console.log('Market indicators WebSocket closed. Reconnecting...');
+          // Try to reconnect after 5 seconds
+          reconnectTimeout = setTimeout(connectIndicatorsWebSocket, 5000);
+        };
+      } catch (error) {
+        console.error('Error setting up market indicators WebSocket:', error);
+        // Fallback to polling
+        const interval = setInterval(fetchMarketIndicators, 15000);
+        return () => clearInterval(interval);
       }
     };
-    
-    indicatorsWs.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      // Fallback to polling if WebSocket fails
-      const interval = setInterval(fetchMarketIndicators, 15000);
-      return () => clearInterval(interval);
-    };
+
+    // Connect to WebSockets
+    connectPricesWebSocket();
+    connectIndicatorsWebSocket();
 
     // Cleanup function
     return () => {
-      pricesWs.close();
-      indicatorsWs.close();
+      if (pricesWs) {
+        pricesWs.close();
+      }
+      if (indicatorsWs) {
+        indicatorsWs.close();
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
     };
   }, []);
 
