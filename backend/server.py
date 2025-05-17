@@ -36,7 +36,19 @@ db = client[os.environ['DB_NAME']]
 # Binance API configuration
 BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
 BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
-binance_client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+
+# Initialize Binance client
+binance_client = None
+using_mock_data = False
+
+try:
+    binance_client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+    binance_client.ping()  # Check if API is accessible
+    logger.info("Binance API connected successfully")
+except Exception as e:
+    logger.warning(f"Failed to connect to Binance API: {e}")
+    logger.warning("Using mock data instead")
+    using_mock_data = True
 
 # Redis client for caching
 try:
