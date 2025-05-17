@@ -25,7 +25,7 @@ const NewsFeed = ({ limit = 6, category = null }) => {
     const fetchNews = async () => {
       try {
         setIsLoading(true);
-        let url = `${API}/news/news?limit=${limit}`;
+        let url = `${API}/news?limit=${limit}`;
         
         if (activeCategory) {
           url += `&category=${activeCategory}`;
