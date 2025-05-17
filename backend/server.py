@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends, Query
+from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends, Query, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -9,13 +10,19 @@ import os
 import asyncio
 import uuid
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import json
 from binance.client import Client
 import websockets
 import requests
 import pandas as pd
+
+# Import our modules
+from auth import authenticate_user, create_access_token, get_current_user, create_user
+from models import (UserCreate, UserLogin, UserResponse, Token, 
+                   Portfolio, PortfolioCreate, PortfolioSummary, 
+                   UserPreferences, CryptoCurrency, MarketIndicator, ChartData)
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
