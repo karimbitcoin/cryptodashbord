@@ -262,7 +262,18 @@ const Dashboard = () => {
                 title="24h Volume Trend" 
                 color="#5d69cb"
               />
-              <FearGreedIndex value={marketIndicators.fear_greed_index} />
+              <div className="md:col-span-1">
+                <FearGreedIndex value={marketIndicators.fear_greed_index} />
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <TrendChart 
+                data={btcDominanceData} 
+                title="Bitcoin Dominance Trend" 
+                color="#f7931a"
+                height={200}
+              />
             </div>
 
             {/* Chart */}
