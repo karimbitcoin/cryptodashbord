@@ -61,8 +61,11 @@ except Exception as e:
 # Create the main app
 app = FastAPI()
 
-# Create a router with the /api prefix
+# Create routers with prefixes
 api_router = APIRouter(prefix="/api")
+auth_router = APIRouter(prefix="/auth")
+portfolio_router = APIRouter(prefix="/portfolio")
+preferences_router = APIRouter(prefix="/preferences")
 
 # CORS configuration
 app.add_middleware(
