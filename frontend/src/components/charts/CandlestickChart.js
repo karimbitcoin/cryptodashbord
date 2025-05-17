@@ -24,7 +24,7 @@ const CandlestickChart = ({ symbol, timeframe, height = 400, showToolbar = true 
     const fetchChartData = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`${API}/crypto/chart/${symbol}?interval=${timeframe}`);
+        const response = await axios.get(`${API}/chart/${symbol}?interval=${timeframe}`);
         setChartData(response.data);
         setError(null);
         setIsLoading(false);
