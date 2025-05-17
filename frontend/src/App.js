@@ -265,6 +265,33 @@ const Dashboard = () => {
         };
       } catch (error) {
         console.error('Error initializing chart:', error);
+        // Create a fallback chart display
+        if (chartContainerRef.current) {
+          chartContainerRef.current.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full bg-slate-800 p-4">
+              <p class="text-red-400 text-lg mb-4">Chart initialization error.</p>
+              <p class="text-gray-300">Showing ${selectedCrypto} data for ${selectedTimeframe} timeframe</p>
+              <div class="mt-4 w-full">
+                <div class="w-full h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-11/12 h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-10/12 h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-full h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-9/12 h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-11/12 h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-10/12 h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-full h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-8/12 h-4 bg-slate-700 rounded mb-1"></div>
+                <div class="w-11/12 h-4 bg-slate-700 rounded"></div>
+              </div>
+              <button 
+                onClick={() => fetchChartData(selectedCrypto, selectedTimeframe)}
+                class="mt-4 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded"
+              >
+                Retry Loading Chart
+              </button>
+            </div>
+          `;
+        }
       }
     }
   }, [chartData]);
