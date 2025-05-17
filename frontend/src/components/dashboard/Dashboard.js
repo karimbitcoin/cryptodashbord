@@ -75,7 +75,7 @@ const Dashboard = () => {
   // Fetch initial data
   const fetchCryptocurrencies = async () => {
     try {
-      const response = await axios.get(`${API}/crypto/cryptocurrencies`);
+      const response = await axios.get(`${API}/cryptocurrencies`);
       setCryptocurrencies(response.data);
       setIsLoading(false);
     } catch (error) {
@@ -85,7 +85,7 @@ const Dashboard = () => {
 
   const fetchMarketIndicators = async () => {
     try {
-      const response = await axios.get(`${API}/crypto/market-indicators`);
+      const response = await axios.get(`${API}/market-indicators`);
       setMarketIndicators(response.data);
     } catch (error) {
       console.error('Error fetching market indicators:', error);
