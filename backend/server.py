@@ -521,6 +521,11 @@ async def get_cryptocurrencies(symbols: Optional[str] = Query(None)):
 async def get_market_indicators_api():
     return await get_market_indicators()
 
+@api_router.get("/news")
+async def get_news_api(limit: int = 10, category: Optional[str] = None, search: Optional[str] = None):
+    """Get news articles with optional filtering by category and search term"""
+    return get_mock_news(limit, category, search)
+
 @api_router.get("/chart/{symbol}")
 async def get_chart_data(symbol: str, interval: str = "1h"):
     return await get_candlestick_data(symbol, interval)
