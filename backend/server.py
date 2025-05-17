@@ -19,6 +19,12 @@ import requests
 import pandas as pd
 
 # Import our modules
+import os
+import sys
+# Add the current directory to the Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Import our modules
 from auth import authenticate_user, create_access_token, get_current_user, create_user
 from models import (UserCreate, UserLogin, UserResponse, Token, 
                    Portfolio, PortfolioCreate, PortfolioSummary, 
