@@ -85,8 +85,8 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddAssetForm, setShowAddAssetForm] = useState(false);
-  const { currentUser, logout } = useAuth();
-  const { portfolios, currentPortfolio, createPortfolio } = usePortfolio();
+  const { currentUser, logout } = useAuth() || { currentUser: null, logout: () => {} };
+  const { portfolios, currentPortfolio, createPortfolio } = usePortfolio() || { portfolios: [], currentPortfolio: null, createPortfolio: () => {} };
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candlestickSeriesRef = useRef(null);
