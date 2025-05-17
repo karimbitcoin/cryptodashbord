@@ -12,7 +12,6 @@ from datetime import datetime
 from pathlib import Path
 import json
 from binance.client import Client
-from binance.websockets import BinanceSocketManager
 import websockets
 import requests
 import redis
