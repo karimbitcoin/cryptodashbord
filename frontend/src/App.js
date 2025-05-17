@@ -158,55 +158,62 @@ const Dashboard = () => {
         candlestickSeriesRef.current = null;
       }
 
-      const chart = createChart(chartContainerRef.current, {
-        width: chartContainerRef.current.clientWidth,
-        height: 400,
-        layout: {
-          background: { color: '#1E2030' },
-          textColor: '#DDD',
-        },
-        grid: {
-          vertLines: { color: '#262B43' },
-          horzLines: { color: '#262B43' },
-        },
-        crosshair: {
-          mode: CrosshairMode.Normal,
-        },
-        timeScale: {
-          borderColor: '#454545',
-          timeVisible: true,
-        },
-        rightPriceScale: {
-          borderColor: '#454545',
-        },
-      });
-
-      const candlestickSeries = chart.addCandlestickSeries({
-        upColor: '#4CAF50',
-        downColor: '#FF5252',
-        borderVisible: false,
-        wickUpColor: '#4CAF50',
-        wickDownColor: '#FF5252',
-      });
-
-      candlestickSeriesRef.current = candlestickSeries;
-      candlestickSeries.setData(chartData);
-
-      // Handle resize
-      const handleResize = () => {
-        chart.applyOptions({
+      try {
+        const chart = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
+          height: 400,
+          layout: {
+            background: { color: '#1E2030' },
+            textColor: '#DDD',
+          },
+          grid: {
+            vertLines: { color: '#262B43' },
+            horzLines: { color: '#262B43' },
+          },
+          crosshair: {
+            mode: CrosshairMode.Normal,
+          },
+          timeScale: {
+            borderColor: '#454545',
+            timeVisible: true,
+          },
+          rightPriceScale: {
+            borderColor: '#454545',
+          },
         });
-      };
 
-      window.addEventListener('resize', handleResize);
-      chartRef.current = chart;
+        const candlestickSeries = chart.addCandlestickSeries({
+          upColor: '#4CAF50',
+          downColor: '#FF5252',
+          borderVisible: false,
+          wickUpColor: '#4CAF50',
+          wickDownColor: '#FF5252',
+        });
 
-      return () => {
-        window.removeEventListener('resize', handleResize);
-      };
+        candlestickSeriesRef.current = candlestickSeries;
+        candlestickSeries.setData(chartData);
+
+        // Handle resize
+        const handleResize = () => {
+          chart.applyOptions({
+            width: chartContainerRef.current.clientWidth,
+          });
+        };
+
+        window.addEventListener('resize', handleResize);
+        chartRef.current = chart;
+
+        return () => {
+          window.removeEventListener('resize', handleResize);
+          if (chartRef.current) {
+            chartRef.current.remove();
+          }
+        };
+      } catch (error) {
+        console.error('Error initializing chart:', error);
+      }
     }
-  }, [chartData, chartContainerRef.current]);
+  }, [chartData]);
 
   // Update chart data when selected crypto or timeframe changes
   useEffect(() => {
