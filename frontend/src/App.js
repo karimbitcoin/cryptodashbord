@@ -18,19 +18,23 @@ import PortfolioView from './components/portfolio/PortfolioView';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Function to format large numbers with commas and abbreviations
-const formatNumber = (number, decimals = 2) => {
-  if (number === undefined || number === null) return '0';
+// Protected Route component
+const ProtectedRoute = ({ children }) => {
+  const { currentUser, loading } = useAuth();
   
-  if (number >= 1000000000) {
-    return `$${(number / 1000000000).toFixed(decimals)}B`;
-  } else if (number >= 1000000) {
-    return `$${(number / 1000000).toFixed(decimals)}M`;
-  } else if (number >= 1000) {
-    return `$${(number / 1000).toFixed(decimals)}K`;
-  } else {
-    return `$${number.toFixed(decimals)}`;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+      </div>
+    );
   }
+  
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
 };
 
 // Function to get crypto icon
