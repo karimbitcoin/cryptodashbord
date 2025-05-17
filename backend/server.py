@@ -19,8 +19,8 @@ import requests
 import pandas as pd
 
 # Import our modules
-from auth import authenticate_user, create_access_token, get_current_user, create_user
-from models import (UserCreate, UserLogin, UserResponse, Token, 
+from .auth import authenticate_user, create_access_token, get_current_user, create_user
+from .models import (UserCreate, UserLogin, UserResponse, Token, 
                    Portfolio, PortfolioCreate, PortfolioSummary, 
                    UserPreferences, CryptoCurrency, MarketIndicator, ChartData)
 
