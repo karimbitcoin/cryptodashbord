@@ -16,6 +16,7 @@ class CryptoDashboardAPITest(unittest.TestCase):
         self.headers = {'Content-Type': 'application/json'}
         self.test_symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"]
         self.test_intervals = ["1m", "5m", "15m", "1h", "4h", "1d", "1w"]
+        self.token = None
     
     def test_api_root(self):
         """Test the API root endpoint"""
@@ -130,12 +131,231 @@ class CryptoDashboardAPITest(unittest.TestCase):
         # Check that we got a response with some interval
         self.assertIn("interval", data)
         print(f"✅ API handled invalid interval gracefully, used: {data['interval']}")
+    
+    def test_auth_login(self):
+        """Test authentication login endpoint"""
+        print("\n🔍 Testing /api/auth/login endpoint...")
+        
+        # OAuth2 password flow requires form data
+        form_data = {
+            'username': 'user@example.com',
+            'password': 'password'
+        }
+        
+        response = requests.post(
+            f"{API_URL}/auth/login", 
+            data=form_data,
+            headers={'Content-Type': 'application/x-www-form-urlencoded'}
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        self.assertIn('access_token', data)
+        self.assertIn('token_type', data)
+        self.assertEqual(data['token_type'], 'bearer')
+        
+        # Store token for authenticated tests
+        self.token = data['access_token']
+        print(f"✅ Login successful, token received")
+        
+        return self.token
+    
+    def test_auth_me(self):
+        """Test getting current user info"""
+        if not self.token:
+            self.token = self.test_auth_login()
+        
+        print("\n🔍 Testing /api/auth/me endpoint...")
+        
+        headers = {
+            'Authorization': f'Bearer {self.token}'
+        }
+        
+        response = requests.get(f"{API_URL}/auth/me", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        required_fields = ["id", "email", "username"]
+        for field in required_fields:
+            self.assertIn(field, data, f"Field '{field}' missing from user data")
+        
+        print(f"✅ Current user data received: {data['username']} ({data['email']})")
+    
+    def test_portfolio_endpoints(self):
+        """Test portfolio endpoints"""
+        if not self.token:
+            self.token = self.test_auth_login()
+        
+        headers = {
+            'Authorization': f'Bearer {self.token}',
+            'Content-Type': 'application/json'
+        }
+        
+        # 1. Get all portfolios
+        print("\n🔍 Testing /api/portfolio endpoint (GET)...")
+        response = requests.get(f"{API_URL}/portfolio", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        portfolios = response.json()
+        self.assertIsInstance(portfolios, list)
+        print(f"✅ Retrieved {len(portfolios)} portfolios")
+        
+        # 2. Create a new portfolio
+        print("\n🔍 Testing /api/portfolio endpoint (POST)...")
+        new_portfolio = {
+            "name": f"Test Portfolio {datetime.now().strftime('%H%M%S')}",
+            "assets": [
+                {
+                    "symbol": "BTCUSDT",
+                    "amount": 0.5,
+                    "purchase_price": 50000
+                },
+                {
+                    "symbol": "ETHUSDT",
+                    "amount": 2.0,
+                    "purchase_price": 3000
+                }
+            ]
+        }
+        
+        response = requests.post(f"{API_URL}/portfolio", json=new_portfolio, headers=headers)
+        self.assertEqual(response.status_code, 201)
+        created_portfolio = response.json()
+        
+        required_fields = ["id", "name", "assets", "user_id"]
+        for field in required_fields:
+            self.assertIn(field, created_portfolio, f"Field '{field}' missing from created portfolio")
+        
+        portfolio_id = created_portfolio["id"]
+        print(f"✅ Created portfolio with ID: {portfolio_id}")
+        
+        # 3. Get portfolio by ID
+        print(f"\n🔍 Testing /api/portfolio/{portfolio_id} endpoint (GET)...")
+        response = requests.get(f"{API_URL}/portfolio/{portfolio_id}", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        portfolio = response.json()
+        self.assertEqual(portfolio["id"], portfolio_id)
+        print(f"✅ Retrieved portfolio: {portfolio['name']}")
+        
+        # 4. Delete portfolio
+        print(f"\n🔍 Testing /api/portfolio/{portfolio_id} endpoint (DELETE)...")
+        response = requests.delete(f"{API_URL}/portfolio/{portfolio_id}", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        print(f"✅ Deleted portfolio with ID: {portfolio_id}")
+    
+    def test_user_preferences(self):
+        """Test user preferences endpoint"""
+        if not self.token:
+            self.token = self.test_auth_login()
+        
+        headers = {
+            'Authorization': f'Bearer {self.token}',
+            'Content-Type': 'application/json'
+        }
+        
+        print("\n🔍 Testing /api/preferences endpoint (GET)...")
+        response = requests.get(f"{API_URL}/preferences", headers=headers)
+        
+        # This endpoint might return 404 if preferences don't exist yet
+        if response.status_code == 200:
+            preferences = response.json()
+            required_fields = ["default_currency", "dark_mode", "favorite_coins"]
+            for field in required_fields:
+                self.assertIn(field, preferences, f"Field '{field}' missing from preferences")
+            print(f"✅ Retrieved user preferences")
+        elif response.status_code == 404:
+            print(f"✅ User preferences not found (expected for new users)")
+        else:
+            self.fail(f"Unexpected status code: {response.status_code}")
+
+class AuthenticationTest(unittest.TestCase):
+    """Test suite for authentication-related functionality"""
+    
+    def test_login_success(self):
+        """Test successful login"""
+        print("\n🔍 Testing successful login...")
+        
+        form_data = {
+            'username': 'user@example.com',
+            'password': 'password'
+        }
+        
+        response = requests.post(
+            f"{API_URL}/auth/login", 
+            data=form_data,
+            headers={'Content-Type': 'application/x-www-form-urlencoded'}
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('access_token', data)
+        print(f"✅ Login successful with correct credentials")
+    
+    def test_login_failure(self):
+        """Test failed login with incorrect credentials"""
+        print("\n🔍 Testing failed login...")
+        
+        form_data = {
+            'username': 'user@example.com',
+            'password': 'wrong_password'
+        }
+        
+        response = requests.post(
+            f"{API_URL}/auth/login", 
+            data=form_data,
+            headers={'Content-Type': 'application/x-www-form-urlencoded'}
+        )
+        
+        self.assertEqual(response.status_code, 401)
+        print(f"✅ Login correctly failed with wrong credentials")
+    
+    def test_protected_endpoint_without_token(self):
+        """Test accessing protected endpoint without token"""
+        print("\n🔍 Testing protected endpoint without token...")
+        
+        response = requests.get(f"{API_URL}/auth/me")
+        self.assertEqual(response.status_code, 401)
+        print(f"✅ Protected endpoint correctly rejected unauthenticated request")
+    
+    def test_register_endpoint(self):
+        """Test user registration"""
+        print("\n🔍 Testing /api/auth/register endpoint...")
+        
+        # Generate a unique email
+        unique_email = f"test_user_{datetime.now().strftime('%H%M%S')}@example.com"
+        
+        new_user = {
+            "email": unique_email,
+            "username": f"testuser_{datetime.now().strftime('%H%M%S')}",
+            "password": "TestPassword123"
+        }
+        
+        response = requests.post(f"{API_URL}/auth/register", json=new_user)
+        
+        # Registration should either succeed with 201 or fail with 400 if user exists
+        if response.status_code == 201:
+            data = response.json()
+            self.assertIn('id', data)
+            self.assertEqual(data['email'], new_user['email'])
+            print(f"✅ Registration successful for {new_user['email']}")
+        elif response.status_code == 400:
+            print(f"✅ Registration failed as expected (user might already exist)")
+        else:
+            self.fail(f"Unexpected status code: {response.status_code}")
 
 def run_tests():
     """Run the test suite"""
     print(f"🚀 Starting API tests against {API_URL}")
-    test_suite = unittest.TestLoader().loadTestsFromTestCase(CryptoDashboardAPITest)
-    result = unittest.TextTestRunner(verbosity=2).run(test_suite)
+    
+    # Create test suites
+    crypto_suite = unittest.TestLoader().loadTestsFromTestCase(CryptoDashboardAPITest)
+    auth_suite = unittest.TestLoader().loadTestsFromTestCase(AuthenticationTest)
+    
+    # Combine test suites
+    all_tests = unittest.TestSuite([crypto_suite, auth_suite])
+    
+    # Run tests
+    result = unittest.TextTestRunner(verbosity=2).run(all_tests)
     return 0 if result.wasSuccessful() else 1
 
 if __name__ == "__main__":
