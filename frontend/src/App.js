@@ -10,7 +10,7 @@ import { SiCardano, SiLitecoin, SiDogecoin, SiBinance, SiSolana } from 'react-ic
 
 // Auth and Portfolio
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { PortfolioProvider } from './contexts/PortfolioContext';
+import { PortfolioProvider, usePortfolio } from './contexts/PortfolioContext';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import PortfolioView from './components/portfolio/PortfolioView';
