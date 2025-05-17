@@ -99,6 +99,11 @@ const Dashboard = () => {
     setSelectedCrypto(symbol);
   };
 
+  // Handle timeframe selection
+  const handleTimeframeChange = (timeframe) => {
+    setSelectedTimeframe(timeframe);
+  };
+
   // Generate trend chart data for market cap and volume
   const generateTrendChartData = () => {
     const marketCapData = [];
