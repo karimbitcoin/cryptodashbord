@@ -84,6 +84,9 @@ const Dashboard = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1h');
   const [chartData, setChartData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAddAssetForm, setShowAddAssetForm] = useState(false);
+  const { currentUser, logout } = useAuth();
+  const { portfolios, currentPortfolio, createPortfolio } = usePortfolio();
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candlestickSeriesRef = useRef(null);
